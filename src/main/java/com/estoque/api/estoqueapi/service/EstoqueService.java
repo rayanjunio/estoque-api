@@ -1,14 +1,11 @@
 package com.estoque.api.estoqueapi.service;
 
 import com.estoque.api.estoqueapi.excecoes.CodeNotFoundException;
-import com.estoque.api.estoqueapi.excecoes.QuantityProductsException;
-import com.estoque.api.estoqueapi.excecoes.ValueProductException;
+import com.estoque.api.estoqueapi.excecoes.InvalidInformationException;
 import com.estoque.api.estoqueapi.model.Produto;
 import com.estoque.api.estoqueapi.model.ReporEstoqueRequest;
 import com.estoque.api.estoqueapi.repository.EstoqueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,75 +15,73 @@ public class EstoqueService {
   @Autowired
   private EstoqueRepository estoqueRepository;
 
-  public ResponseEntity<?> cadastrar(Produto obj) {
-    validacaoDados(obj);
-    return new ResponseEntity<>(estoqueRepository.save(obj), HttpStatus.CREATED);
+  public Produto cadastrar(Produto obj) {
+    if (obj.getQuantidade() <= 0 || obj.getValor() <= 0) {
+      throw new InvalidInformationException();
+    }
+    Produto productCreated = estoqueRepository.save(obj);
+    return productCreated;
   }
 
-  public ResponseEntity<?> selecionarProdutos() {
-    if (estoqueRepository.count() == 0) {
-      return new ResponseEntity<>("O estoque não possui produtos cadastrados", HttpStatus.OK);
-    } else {
-      return new ResponseEntity<>(estoqueRepository.findAll(), HttpStatus.OK);
-    }
+  public List<Produto> selecionarProdutos() {
+    List<Produto> produtos = estoqueRepository.findAll();
+    return produtos;
   }
 
   public Produto selecionarPorCodigo(int idProduto) {
-    if (estoqueRepository.findByCodigo(idProduto) == null) {
+    Produto produto = estoqueRepository.findByCodigo(idProduto);
+    if (produto == null) {
       throw new CodeNotFoundException("Produto não encontrado para o código " + idProduto);
-    } else {
-      return estoqueRepository.findByCodigo(idProduto);
     }
+    return produto;
   }
 
-  public ResponseEntity<?> editar(Produto obj) {
-    if (estoqueRepository.findByCodigo(obj.getCodigo()) == null) {
+  public Produto editar(Produto obj) {
+    Produto produto = estoqueRepository.findByCodigo(obj.getCodigo());
+    if (produto == null) {
       throw new CodeNotFoundException("Produto não encontrado para o código " + obj.getCodigo());
-    } else {
-      validacaoDados(obj);
-      return new ResponseEntity<>(estoqueRepository.save(obj), HttpStatus.OK);
     }
+
+    if (obj.getQuantidade() <= 0 || obj.getValor() <= 0) {
+      throw new InvalidInformationException();
+    }
+    estoqueRepository.save(produto);
+    return produto;
   }
 
-  public ResponseEntity<?> excluir(int idProduto) {
-    Produto obj = selecionarPorCodigo(idProduto);
-    estoqueRepository.delete(obj);
-    return new ResponseEntity<>("Produto deletado com sucesso!", HttpStatus.OK);
+  public String excluir(int idProduto) {
+    Produto produto = estoqueRepository.findByCodigo(idProduto);
+    if (produto == null) {
+      throw new CodeNotFoundException("Produto não encontrado para o código " + idProduto);
+    }
+    estoqueRepository.delete(produto);
+    return produto.getNome() + " deletado com sucesso!";
   }
 
-  public ResponseEntity<?> vender(List<Integer> idProdutos) {
+  public String vender(List<Integer> idProdutos) {
     for (Integer idProduto : idProdutos) {
       if (estoqueRepository.findByCodigo(idProduto) == null) {
         throw new CodeNotFoundException("Produto não encontrado para o código: " + idProduto);
-      } else {
-        Produto obj = estoqueRepository.findByCodigo(idProduto);
-        obj.setQuantidade(obj.getQuantidade() - 1);
-        estoqueRepository.save(obj);
       }
+      Produto obj = estoqueRepository.findByCodigo(idProduto);
+      obj.setQuantidade(obj.getQuantidade() - 1);
+      estoqueRepository.save(obj);
     }
-    return new ResponseEntity<>(HttpStatus.OK);
+    return "Venda concluída com sucesso!";
   }
 
-  public ResponseEntity<?> exibirValor(int idProduto) {
+  public double exibirValor(int idProduto) {
     Produto obj = selecionarPorCodigo(idProduto);
-    return new ResponseEntity<>(obj.getValor(), HttpStatus.OK);
+    return obj.getValor();
   }
 
-  public ResponseEntity<?> reporEstoque(ReporEstoqueRequest reposicao) {
+  public Produto reporEstoque(ReporEstoqueRequest reposicao) {
     if (reposicao.getQuantidade() <= 0) {
-      throw new QuantityProductsException();
-    } else {
-      Produto obj = selecionarPorCodigo(reposicao.getIdProduto());
-      obj.setQuantidade(obj.getQuantidade() + reposicao.getQuantidade());
-      return new ResponseEntity<>(estoqueRepository.save(obj), HttpStatus.OK);
+      throw new InvalidInformationException("A quantidade de produtos não é aceita");
     }
-  }
-
-  private void validacaoDados(Produto obj) {
-    if (obj.getQuantidade() <= 0) {
-      throw new QuantityProductsException();
-    } else if (obj.getValor() <= 0) {
-      throw new ValueProductException();
-    }
+    Produto obj = selecionarPorCodigo(reposicao.getIdProduto());
+    obj.setQuantidade(obj.getQuantidade() + reposicao.getQuantidade());
+    estoqueRepository.save(obj);
+    return obj;
   }
 }
