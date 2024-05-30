@@ -12,6 +12,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Produto {
+
+  public Produto(String nome, double valor, int quantidade) {
+    this.nome = nome;
+    this.valor = valor;
+    this.quantidade = quantidade;
+  }
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private int codigo;
