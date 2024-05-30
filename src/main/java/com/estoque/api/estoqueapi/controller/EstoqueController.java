@@ -30,7 +30,7 @@ public class EstoqueController {
 
   @PutMapping("/editar-produto")
   public ResponseEntity<?> editar(@Valid @RequestBody Produto obj) {
-    return service.editar(obj);
+    return new ResponseEntity<>(service.editar(obj), HttpStatus.OK);
   }
 
   @DeleteMapping("/excluir-produto/{codigo}")
