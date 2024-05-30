@@ -1,8 +1,7 @@
 package com.estoque.api.estoqueapi.infra;
 
 import com.estoque.api.estoqueapi.excecoes.CodeNotFoundException;
-import com.estoque.api.estoqueapi.excecoes.QuantityProductsException;
-import com.estoque.api.estoqueapi.excecoes.ValueProductException;
+import com.estoque.api.estoqueapi.excecoes.InvalidInformationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,14 +25,8 @@ public class RestExceptionHandler  {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
   }
 
-  @ExceptionHandler(ValueProductException.class)
-  private ResponseEntity<RestErrorMessage> valueProductHandler(ValueProductException exception) {
-    RestErrorMessage errorMessage = new RestErrorMessage(HttpStatus.NOT_ACCEPTABLE, exception.getMessage());
-    return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(errorMessage);
-  }
-
-  @ExceptionHandler(QuantityProductsException.class)
-  private ResponseEntity<RestErrorMessage> quantityProductsHandler(QuantityProductsException exception) {
+  @ExceptionHandler(InvalidInformationException.class)
+  private ResponseEntity<RestErrorMessage> valueProductHandler(InvalidInformationException exception) {
     RestErrorMessage errorMessage = new RestErrorMessage(HttpStatus.NOT_ACCEPTABLE, exception.getMessage());
     return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(errorMessage);
   }
