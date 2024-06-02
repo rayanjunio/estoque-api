@@ -15,25 +15,17 @@ public class EstoqueService {
   @Autowired
   private EstoqueRepository estoqueRepository;
 
-  public Produto cadastrar(Produto obj) {
-    if (obj.getQuantidade() <= 0 || obj.getValor() <= 0) {
+  public Produto cadastrar(Produto produto) {
+    if (produto.getQuantidade() <= 0 || produto.getValor() <= 0) {
       throw new InvalidInformationException();
     }
-    Produto productCreated = estoqueRepository.save(obj);
+    Produto productCreated = estoqueRepository.save(produto);
     return productCreated;
   }
 
   public List<Produto> selecionarProdutos() {
     List<Produto> produtos = estoqueRepository.findAll();
     return produtos;
-  }
-
-  public Produto selecionarPorCodigo(int idProduto) {
-    Produto produto = estoqueRepository.findByCodigo(idProduto);
-    if (produto == null) {
-      throw new CodeNotFoundException("Produto não encontrado para o código " + idProduto);
-    }
-    return produto;
   }
 
   public Produto editar(Produto obj) {
@@ -61,27 +53,39 @@ public class EstoqueService {
   public String vender(List<Integer> idProdutos) {
     for (Integer idProduto : idProdutos) {
       if (estoqueRepository.findByCodigo(idProduto) == null) {
-        throw new CodeNotFoundException("Produto não encontrado para o código: " + idProduto);
+        throw new CodeNotFoundException("Produto não encontrado para o código " + idProduto);
       }
-      Produto obj = estoqueRepository.findByCodigo(idProduto);
-      obj.setQuantidade(obj.getQuantidade() - 1);
-      estoqueRepository.save(obj);
     }
-    return "Venda concluída com sucesso!";
+    Produto produto;
+    double valueProducts = 0;
+
+    for (Integer idProduto : idProdutos) {
+      produto = estoqueRepository.findByCodigo(idProduto);
+      valueProducts += produto.getValor();
+      produto.setQuantidade(produto.getQuantidade() - 1);
+      estoqueRepository.save(produto);
+    }
+    return "Valor total: " + valueProducts;
   }
 
   public double exibirValor(int idProduto) {
-    Produto obj = selecionarPorCodigo(idProduto);
-    return obj.getValor();
+    Produto produto = estoqueRepository.findByCodigo(idProduto);
+    if (produto == null) {
+      throw new CodeNotFoundException("Produto não encontrado para o código " + idProduto);
+    }
+    return produto.getValor();
   }
 
   public Produto reporEstoque(ReporEstoqueRequest reposicao) {
     if (reposicao.getQuantidade() <= 0) {
-      throw new InvalidInformationException("A quantidade de produtos não é aceita");
+      throw new InvalidInformationException("A quantidade de itens não é aceita");
     }
-    Produto obj = selecionarPorCodigo(reposicao.getIdProduto());
-    obj.setQuantidade(obj.getQuantidade() + reposicao.getQuantidade());
-    estoqueRepository.save(obj);
-    return obj;
+    Produto produto = estoqueRepository.findByCodigo(reposicao.getIdProduto());
+    if (produto == null) {
+      throw new CodeNotFoundException("Produto não encontrado para o código " + reposicao.getIdProduto());
+    }
+    produto.setQuantidade(produto.getQuantidade() + reposicao.getQuantidade());
+    estoqueRepository.save(produto);
+    return produto;
   }
 }
